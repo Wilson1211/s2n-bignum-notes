@@ -1,0 +1,118 @@
+name	type	help_file
+ABS_TAC	ABS_TAC : tactic	ABS_TAC.hlp
+ALL_TAC	ALL_TAC : tactic	ALL_TAC.hlp
+ANTS_TAC	ANTS_TAC : tactic	ANTS_TAC.hlp
+AP_TERM_TAC	AP_TERM_TAC : tactic	AP_TERM_TAC.hlp
+AP_THM_TAC	AP_THM_TAC : tactic	AP_THM_TAC.hlp
+ARITH_TAC	ARITH_TAC : tactic	ARITH_TAC.hlp
+ASM	ASM : (thm list -> tactic) -> thm list -> tactic	ASM.hlp
+ASM_ARITH_TAC	ASM_ARITH_TAC : tactic	ASM_ARITH_TAC.hlp
+ASM_CASES_TAC	ASM_CASES_TAC : term -> tactic	ASM_CASES_TAC.hlp
+ASM_INT_ARITH_TAC	ASM_INT_ARITH_TAC : tactic	ASM_INT_ARITH_TAC.hlp
+ASM_MESON_TAC	ASM_MESON_TAC : thm list -> tactic	ASM_MESON_TAC.hlp
+ASM_METIS_TAC	ASM_METIS_TAC : thm list -> tactic	ASM_METIS_TAC.hlp
+ASM_REAL_ARITH_TAC	ASM_REAL_ARITH_TAC : tactic	ASM_REAL_ARITH_TAC.hlp
+ASM_REWRITE_TAC	ASM_REWRITE_TAC : thm list -> tactic	ASM_REWRITE_TAC.hlp
+ASM_SIMP_TAC	ASM_SIMP_TAC : thm list -> tactic	ASM_SIMP_TAC.hlp
+ASSUM_LIST	ASSUM_LIST : (thm list -> tactic) -> tactic	ASSUM_LIST.hlp
+BETA_TAC	BETA_TAC : tactic	BETA_TAC.hlp
+BINOP_TAC	BINOP_TAC : tactic	BINOP_TAC.hlp
+BOOL_CASES_TAC	BOOL_CASES_TAC : term -> tactic	BOOL_CASES_TAC.hlp
+CASE_REWRITE_TAC	CASE_REWRITE_TAC : thm -> tactic	CASE_REWRITE_TAC.hlp
+CHANGED_TAC	CHANGED_TAC : tactic -> tactic	CHANGED_TAC.hlp
+CHEAT_TAC	CHEAT_TAC : tactic	CHEAT_TAC.hlp
+CLAIM_TAC	CLAIM_TAC : string -> term -> tactic	CLAIM_TAC.hlp
+COND_CASES_TAC	COND_CASES_TAC : tactic	COND_CASES_TAC.hlp
+CONJ_TAC	CONJ_TAC : tactic	CONJ_TAC.hlp
+CONV_TAC	CONV_TAC : conv -> tactic	CONV_TAC.hlp
+DIMINDEX_TAC	DIMINDEX_TAC : tactic	DIMINDEX_TAC.hlp
+DISCH_TAC	DISCH_TAC : tactic	DISCH_TAC.hlp
+DISCH_THEN	DISCH_THEN : thm_tactic -> tactic	DISCH_THEN.hlp
+DISJ1_TAC	DISJ1_TAC : tactic	DISJ1_TAC.hlp
+DISJ2_TAC	DISJ2_TAC : tactic	DISJ2_TAC.hlp
+EQ_TAC	EQ_TAC : tactic	EQ_TAC.hlp
+EVERY	EVERY : tactic list -> tactic	EVERY.hlp
+EVERY_ASSUM	EVERY_ASSUM : thm_tactic -> tactic	EVERY_ASSUM.hlp
+EXISTS_TAC	EXISTS_TAC : term -> tactic	EXISTS_TAC.hlp
+EXPAND_TAC	EXPAND_TAC : string -> tactic	EXPAND_TAC.hlp
+FAIL_TAC	FAIL_TAC : string -> tactic	FAIL_TAC.hlp
+FIND_ASSUM	FIND_ASSUM : thm_tactic -> term -> tactic	FIND_ASSUM.hlp
+FIRST	FIRST : tactic list -> tactic	FIRST.hlp
+FIRST_ASSUM	FIRST_ASSUM : thm_tactic -> tactic	FIRST_ASSUM.hlp
+FIRST_X_ASSUM	FIRST_X_ASSUM : thm_tactic -> tactic	FIRST_X_ASSUM.hlp
+FIX_TAC	FIX_TAC : string -> tactic	FIX_TAC.hlp
+GEN_MESON_TAC	GEN_MESON_TAC : int -> int -> int -> thm list -> tactic	GEN_MESON_TAC.hlp
+GEN_REWRITE_TAC	GEN_REWRITE_TAC : (conv -> conv) -> thm list -> tactic	GEN_REWRITE_TAC.hlp
+GEN_TAC	GEN_TAC : tactic	GEN_TAC.hlp
+HINT_EXISTS_TAC	HINT_EXISTS_TAC : tactic	HINT_EXISTS_TAC.hlp
+HYP	HYP : (thm list -> tactic) -> string -> thm list -> tactic	HYP_UPPERCASE.hlp
+HYP_TAC	HYP_TAC : string -> (thm -> thm) -> tactic	HYP_TAC.hlp
+IMP_REWRITE_TAC	IMP_REWRITE_TAC : thm list -> tactic	IMP_REWRITE_TAC.hlp
+INDUCT_TAC	INDUCT_TAC : tactic	INDUCT_TAC.hlp
+INT_ARITH_TAC	INT_ARITH_TAC : tactic	INT_ARITH_TAC.hlp
+INTEGER_TAC	INTEGER_TAC : tactic	INTEGER_TAC.hlp
+INTRO_TAC	INTRO_TAC : string -> tactic	INTRO_TAC.hlp
+ITAUT_TAC	ITAUT_TAC : tactic	ITAUT_TAC.hlp
+LEANCOP_TAC	LEANCOP_TAC : thm list -> tactic	LEANCOP_TAC.hlp
+LET_TAC	LET_TAC : tactic	LET_TAC.hlp
+LIST_INDUCT_TAC	LIST_INDUCT_TAC : tactic	LIST_INDUCT_TAC.hlp
+MAP_EVERY	MAP_EVERY : ('a -> tactic) -> 'a list -> tactic	MAP_EVERY.hlp
+MAP_FIRST	MAP_FIRST : ('a -> tactic) -> 'a list -> tactic	MAP_FIRST.hlp
+MESON_TAC	MESON_TAC : thm list -> tactic	MESON_TAC.hlp
+META_SPEC_TAC	META_SPEC_TAC : term -> thm -> tactic	META_SPEC_TAC.hlp
+METIS_TAC	METIS_TAC : thm list -> tactic	METIS_TAC.hlp
+MK_COMB_TAC	MK_COMB_TAC : tactic	MK_COMB_TAC.hlp
+MONO_TAC	MONO_TAC : tactic	MONO_TAC.hlp
+NAME_ASSUMS_TAC	NAME_ASSUMS_TAC : tactic	NAME_ASSUMS_TAC.hlp
+NANOCOP_TAC	NANOCOP_TAC : thm list -> tactic	NANOCOP_TAC.hlp
+NO_TAC	NO_TAC : tactic	NO_TAC.hlp
+NUM_REDUCE_TAC	NUM_REDUCE_TAC : tactic	NUM_REDUCE_TAC.hlp
+NUMBER_TAC	NUMBER_TAC : tactic	NUMBER_TAC.hlp
+ONCE_ASM_REWRITE_TAC	ONCE_ASM_REWRITE_TAC : thm list -> tactic	ONCE_ASM_REWRITE_TAC.hlp
+ONCE_ASM_SIMP_TAC	ONCE_ASM_SIMP_TAC : thm list -> tactic	ONCE_ASM_SIMP_TAC.hlp
+ONCE_REWRITE_TAC	ONCE_REWRITE_TAC : thm list -> tactic	ONCE_REWRITE_TAC.hlp
+ONCE_SIMP_TAC	ONCE_SIMP_TAC : thm list -> tactic	ONCE_SIMP_TAC.hlp
+ORELSE	(ORELSE) : tactic -> tactic -> tactic	ORELSE.hlp
+orelse_	orelse_ : tactic -> tactic -> tactic	orelse_.hlp
+POP_ASSUM	POP_ASSUM : thm_tactic -> tactic	POP_ASSUM.hlp
+POP_ASSUM_LIST	POP_ASSUM_LIST : (thm list -> tactic) -> tactic	POP_ASSUM_LIST.hlp
+PRINT_GOAL_TAC	PRINT_GOAL_TAC : tactic	PRINT_GOAL_TAC.hlp
+PURE_ASM_REWRITE_TAC	PURE_ASM_REWRITE_TAC : thm list -> tactic	PURE_ASM_REWRITE_TAC.hlp
+PURE_ASM_SIMP_TAC	PURE_ASM_SIMP_TAC : thm list -> tactic	PURE_ASM_SIMP_TAC.hlp
+PURE_ONCE_ASM_REWRITE_TAC	PURE_ONCE_ASM_REWRITE_TAC : thm list -> tactic	PURE_ONCE_ASM_REWRITE_TAC.hlp
+PURE_ONCE_REWRITE_TAC	PURE_ONCE_REWRITE_TAC : thm list -> tactic	PURE_ONCE_REWRITE_TAC.hlp
+PURE_REWRITE_TAC	PURE_REWRITE_TAC : thm list -> tactic	PURE_REWRITE_TAC.hlp
+PURE_SIMP_TAC	PURE_SIMP_TAC : thm list -> tactic	PURE_SIMP_TAC.hlp
+REAL_ARITH_TAC	REAL_ARITH_TAC : tactic	REAL_ARITH_TAC.hlp
+REFL_TAC	REFL_TAC : tactic	REFL_TAC.hlp
+REMARK_TAC	REMARK_TAC : string -> tactic	REMARK_TAC.hlp
+REMOVE_THEN	REMOVE_THEN : string -> thm_tactic -> tactic	REMOVE_THEN.hlp
+REPEAT	REPEAT : tactic -> tactic	REPEAT_UPPERCASE.hlp
+REPLICATE_TAC	REPLICATE_TAC : int -> tactic -> tactic	REPLICATE_TAC.hlp
+REWRITE_TAC	REWRITE_TAC : thm list -> tactic	REWRITE_TAC.hlp
+RULE_ASSUM_TAC	RULE_ASSUM_TAC : (thm -> thm) -> tactic	RULE_ASSUM_TAC.hlp
+SELECT_ELIM_TAC	SELECT_ELIM_TAC : tactic	SELECT_ELIM_TAC.hlp
+SEQ_IMP_REWRITE_TAC	SEQ_IMP_REWRITE_TAC : thm list -> tactic	SEQ_IMP_REWRITE_TAC.hlp
+SET_TAC	SET_TAC : thm list -> tactic	SET_TAC.hlp
+SIMP_TAC	SIMP_TAC : thm list -> tactic	SIMP_TAC.hlp
+SPEC_TAC	SPEC_TAC : term * term -> tactic	SPEC_TAC.hlp
+STRIP_GOAL_THEN	STRIP_GOAL_THEN : thm_tactic -> tactic	STRIP_GOAL_THEN.hlp
+STRIP_TAC	STRIP_TAC : tactic	STRIP_TAC.hlp
+SUBGOAL_TAC	SUBGOAL_TAC : string -> term -> tactic list -> tactic	SUBGOAL_TAC.hlp
+SUBGOAL_THEN	SUBGOAL_THEN : term -> thm_tactic -> tactic	SUBGOAL_THEN.hlp
+SUBST_ALL_TAC	SUBST_ALL_TAC : thm -> tactic	SUBST_ALL_TAC.hlp
+SUBST_VAR_TAC	SUBST_VAR_TAC : thm -> tactic	SUBST_VAR_TAC.hlp
+TARGET_REWRITE_TAC	TARGET_REWRITE_TAC : thm list -> thm -> tactic	TARGET_REWRITE_TAC.hlp
+THEN	(THEN) : tactic -> tactic -> tactic	THEN.hlp
+then_	then_ : tactic -> tactic -> tactic	then_.hlp
+THENL	(THENL) : tactic -> tactic list -> tactic	THENL.hlp
+thenl_	thenl_ : tactic -> tactic list -> tactic	thenl_.hlp
+TRANS_TAC	TRANS_TAC : thm -> term -> tactic	TRANS_TAC.hlp
+TRY	TRY : tactic -> tactic	TRY.hlp
+UNDISCH_TAC	UNDISCH_TAC : term -> tactic	UNDISCH_TAC.hlp
+UNDISCH_THEN	UNDISCH_THEN : term -> thm_tactic -> tactic	UNDISCH_THEN.hlp
+UNIFY_REFL_TAC	UNIFY_REFL_TAC : tactic	UNIFY_REFL_TAC.hlp
+USE_THEN	USE_THEN : string -> thm_tactic -> tactic	USE_THEN.hlp
+VALID	VALID : tactic -> tactic	VALID.hlp
+X_GEN_TAC	X_GEN_TAC : term -> tactic	X_GEN_TAC.hlp
+X_META_EXISTS_TAC	X_META_EXISTS_TAC : term -> tactic	X_META_EXISTS_TAC.hlp

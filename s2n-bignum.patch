@@ -1,0 +1,87 @@
+diff --git a/arm/Makefile b/arm/Makefile
+index 822ee41c..c1928c63 100644
+--- a/arm/Makefile
++++ b/arm/Makefile
+@@ -445,7 +445,7 @@ BASE_ML=proofs/arm.ml \
+         proofs/instruction.ml \
+         proofs/subroutine_signatures.ml
+ 
+-HOLDIR?=$(HOME)/hol-light
++HOLDIR?=/mnt/disk/hol-light
+ HOLLIGHT:=$(HOLDIR)/hol.sh
+ 
+ PROOF_BINS = $(OBJ:.o=.native)
+diff --git a/arm/proofs/arm.ml b/arm/proofs/arm.ml
+index c0f2783f..8bca1988 100644
+--- a/arm/proofs/arm.ml
++++ b/arm/proofs/arm.ml
+@@ -648,10 +648,11 @@ let ARM_QUICKSIM_TAC execth pats snums =
+ (* More convenient wrappings of basic simulation flow.                       *)
+ (* ------------------------------------------------------------------------- *)
+ 
+-let ARM_SIM_TAC ?(preprocess_tac=ALL_TAC) ?(canonicalize_pc_diff=true)
++let ARM_SIM_TAC ?(preprocess_tac:tactic option) ?(canonicalize_pc_diff=true)
+     execth snums =
+   REWRITE_TAC(!simulation_precanon_thms) THEN
+-  ENSURES_INIT_TAC "s0" THEN preprocess_tac THEN
++  ENSURES_INIT_TAC "s0" THEN
++  (match preprocess_tac with Some t -> t | None -> ALL_TAC) THEN
+   ARM_STEPS_TAC execth snums THEN
+   ENSURES_FINAL_STATE_TAC THEN ASM_REWRITE_TAC[] THEN
+   (if canonicalize_pc_diff then
+diff --git a/tools/build-proof.sh b/tools/build-proof.sh
+index 39d72433..4dbb8a4b 100755
+--- a/tools/build-proof.sh
++++ b/tools/build-proof.sh
+@@ -48,10 +48,37 @@ if [ -d "${HOLLIGHT_DIR}/_opam" ]; then
+   eval $(opam env --switch "${HOLLIGHT_DIR}/" --set-switch)
+ fi
+ 
++inlined_raw="$(mktemp).ml"
+ inlined_prefix="$(mktemp)"
+ inlined_ml="${inlined_prefix}.ml"
+ inlined_cmx="${inlined_prefix}.cmx"
+-ocaml ${HOLLIGHT_DIR}/inline_load.ml ${template_ml} ${inlined_ml}
++${HOLLIGHT_DIR}/hol.sh inline-load ${template_ml} ${inlined_raw}
++
++if [ "${THM_DUMP_DIR}" == "" ]; then
++  echo "THM_DUMP_DIR is empty! Do 'export THM_DUMP_DIR=(your path)', or theorems are not exported."
++else
++  mkdir -p ${THM_DUMP_DIR}
++
++  dst_filename=$(basename ${ml_path_noarch})
++  dst_filename=${dst_filename%.ml}_inlined.ml
++
++  python3 ${HOLLIGHT_DIR}/TacticTrace/remove-linenum-dirs.py ${inlined_raw} ${THM_DUMP_DIR}/${dst_filename}
++  ${HOLLIGHT_DIR}/TacticTrace/get-ast.sh ${THM_DUMP_DIR}/${dst_filename}
++  ${HOLLIGHT_DIR}/TacticTrace/tracer collect-toplevel-thms \
++    ${THM_DUMP_DIR}/${dst_filename%.ml}.marshalled.bin \
++    ${THM_DUMP_DIR}/$(basename $ml_path).json
++fi
++
++if [ "${TRACE_DUMP_DIR}" == "" ]; then
++  echo "TRACE_DUMP_DIR is empty! Do 'export TRACE_DUMP_DIR=(your path)', or trace won't be generated."
++  cp $inlined_raw $inlined_ml
++else
++  mkdir -p ${TRACE_DUMP_DIR}
++  ${HOLLIGHT_DIR}/TacticTrace/modify-proof.sh ${inlined_raw} ${inlined_ml} "${TRACE_DUMP_DIR}/$(basename $ml_path)"
++fi
++echo "THM_DUMP_DIR: ${THM_DUMP_DIR}"
++echo "TRACE_DUMP_DIR: ${TRACE_DUMP_DIR}"
++echo "Compiling: ${inlined_ml}"
+ 
+ # Give a large stack size.
+ OCAMLRUNPARAM=l=2000000000 \
+diff --git a/x86/Makefile b/x86/Makefile
+index 64cbd88f..c673179c 100644
+--- a/x86/Makefile
++++ b/x86/Makefile
+@@ -452,7 +452,7 @@ BASE_ML=proofs/base.ml \
+         proofs/subroutine_signatures.ml \
+         proofs/x86.ml
+ 
+-HOLDIR?=$(HOME)/hol-light
++HOLDIR?=/mnt/disk/hol-light
+ HOLLIGHT:=$(HOLDIR)/hol.sh
+ 
+ PROOF_BINS = $(OBJ:.o=.native)
