@@ -2,3 +2,9 @@
 *.md.bak*
 __pycache__/
 *.log
+
+# latex
+**.fls
+**.fdb_latexmk
+**.aux
+

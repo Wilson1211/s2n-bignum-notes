@@ -39,28 +39,31 @@
     {\dpath{data/merged/}\\跨 proofs 合併同一個 tactic 的 records};
   \node[stage] (dedup) at (0,-3.9)
     {\dpath{data/dedup/}\\完全去重};
-  \node[stage] (sampling) at (0,-5.2)
-    {\dpath{data/sampling/}\\similarity check、各組配額與空缺遞補};
-  \node[stage] (generation) at (0,-6.5)
+  \node[stage] (similarity-check) at (0,-5.2)
+    {\dpath{data/similarity-check/}\\similarity check};
+  \node[stage] (sampling) at (0,-6.5)
+    {\dpath{data/sampling/}\\各組配額與空缺遞補};
+  \node[stage] (generation) at (0,-7.8)
     {\dpath{data/generation/}\\準備實際要送給 LLM 的 records 和 prompt};
-  \node[stage] (descriptions) at (0,-7.8)
+  \node[stage] (descriptions) at (0,-9.1)
     {\dpath{llm_output/descriptions/}\\LLM 生成的 descriptions};
-  \node[stage] (judge) at (0,-9.1)
+  \node[stage] (judge) at (0,-10.4)
     {\dpath{metrics/judge_responses/}\\LLM judge 的回答};
-  \node[stage] (record) at (0,-10.4)
+  \node[stage] (record) at (0,-11.7)
     {\dpath{metrics/record_scores/}\\將回答整理成逐筆分數};
-  \node[stage] (tactic) at (0,-11.7)
-    {\dpath{metrics/tactic_scores/}\\按 tactic／description 彙整};
+  \node[stage] (tactic) at (0,-13.0)
+    {\dpath{metrics/tactic_scores/}\\按 tactic\/description 彙整};
 
-  \node[side] (selection) at (6.4,-5.2)
+  \node[side] (selection) at (6.4,-6.5)
     {\dpath{metrics/selection/}\\篩選決定與統計};
-  \node[side] (evaluation) at (6.4,-7.8)
+  \node[side] (evaluation) at (6.4,-9.1)
     {\dpath{data/evaluation/}\\選定用來評分的 records};
 
   \draw[flow] (proof) -- (raw);
   \draw[flow] (raw) -- (merged);
   \draw[flow] (merged) -- (dedup);
-  \draw[flow] (dedup) -- (sampling);
+  \draw[flow] (dedup) -- (similarity-check);
+  \draw[flow] (similarity-check) -- (sampling);
   \draw[flow] (sampling) -- (generation);
   \draw[flow] (generation) -- (descriptions);
   \draw[flow] (descriptions) -- (judge);
@@ -88,15 +91,18 @@
 \endhead
 1 & \dpath{data/raw/} & Collector 跑完 proof 後輸出的 records。\cjkbreak 已經受到 collector 的大小、容量與選取規則限制，\cjkbreak 因此不是執行過程中的所有 records。 \\ \hline
 2 & \dpath{data/merged/} & 把不同 proofs 中同一個 tactic 的候選 records 集合在一起，\cjkbreak 此階段仍可包含重複資料。 \\ \hline
-3 & \dpath{data/dedup/} & 依既有 record identity 規則，\cjkbreak 移除完全重複後的 records。\cjkbreak 尚未做後面的 similarity 與最終配額選擇。 \\ \hline
-4 & \dpath{data/sampling/} & 經過 similarity check、分組配額與遞補後，\cjkbreak 最後選出的 records，\cjkbreak 供 description generation 使用。 \\ \hline
-4 的紀錄 & \dpath{metrics/selection/} & 為什麼保留或排除某筆 record、相似度比較、\cjkbreak 各組數量與篩選設定。\cjkbreak 這不是 LLM 對 description 的評分。 \\ \hline
-5 & \dpath{data/generation/} & 實際生成請求：\cjkbreak 包含送進 LLM 的 records、prompt 和相關設定。\cjkbreak 若生成時另外抽樣或截斷，\cjkbreak 這裡記錄實際使用的版本。 \\ \hline
-6 & \dpath{llm_output/descriptions/} & LLM 產生的 descriptions，\cjkbreak 以及生成嘗試與狀態等紀錄。 \\ \hline
-7 & \dpath{data/evaluation/} & Judge 使用的 records、\cjkbreak 候選 descriptions 的對應資訊與評分任務。\cjkbreak 放在這裡不代表它們與生成資料沒有重疊，\cjkbreak 是否獨立要看實驗設計。 \\ \hline
-8 & \dpath{metrics/judge_responses/} & 保存 judge 的回答，\cjkbreak 包括逐筆判斷、理由、用量和呼叫錯誤。 \\ \hline
-9 & \dpath{metrics/record_scores/} & 把有效回答整理成每筆 record 對每份 description 的分數與理由。\cjkbreak 目前這個 judge 的對應是 full=1、partial=0.5、none=0。 \\ \hline
-10 & \dpath{metrics/tactic_scores/} & 將逐筆分數彙整成每個 tactic／description 的結果，\cjkbreak 供比較、報表與表格使用。 \\ \hline
+3 & \dpath{data/dedup/} & 依既有 record identity 規則，\cjkbreak 移除
+完全重複後的 records。\cjkbreak 尚未做後面的 similarity 與最終配額選
+擇。 \\ \hline
+4 & \dpath{data/similarity-check} & 經過 similarity check \\ \hline
+5 & \dpath{data/sampling/} & 分組配額與遞補後，\cjkbreak 最後選出的 records, \cjkbreak 供 description generation 使用。 \\ \hline
+5 的紀錄 & \dpath{metrics/selection/} & 為什麼保留或排除某筆 record、相似度比較、\cjkbreak 各組數量與篩選設定。\cjkbreak 這不是 LLM 對 description 的評分。 \\ \hline
+6 & \dpath{data/generation/} & 實際生成請求：\cjkbreak 包含送進 LLM 的 records、prompt 和相關設定。\cjkbreak 若生成時另外抽樣或截斷，\cjkbreak 這裡記錄實際使用的版本。 \\ \hline
+7 & \dpath{llm_output/descriptions/} & LLM 產生的 descriptions，\cjkbreak 以及生成嘗試與狀態等紀錄。 \\ \hline
+8 & \dpath{data/evaluation/} & Judge 使用的 records、\cjkbreak 候選 descriptions 的對應資訊與評分任務。\cjkbreak 放在這裡不代表它們與生成資料沒有重疊，\cjkbreak 是否獨立要看實驗設計。 \\ \hline
+9 & \dpath{metrics/judge_responses/} & 保存 judge 的回答，\cjkbreak 包括逐筆判斷、理由、用量和呼叫錯誤。 \\ \hline
+10 & \dpath{metrics/record_scores/} & 把有效回答整理成每筆 record 對每份 description 的分數與理由。\cjkbreak 目前這個 judge 的對應是 full=1、partial=0.5、none=0。 \\ \hline
+11 & \dpath{metrics/tactic_scores/} & 將逐筆分數彙整成每個 tactic/description 的結果，\cjkbreak 供比較、報表與表格使用。 \\ \hline
 全流程 & \dpath{data/metadata/} & s2n-bignum commit、實驗設定、來源檔案、雜湊、搬移對照等追溯資訊。\cjkbreak 各資料清單的 index 也可以與 records 放在同一階段資料夾。 \\ \hline
 \end{longtable}
 
