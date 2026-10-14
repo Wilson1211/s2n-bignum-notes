@@ -1,0 +1,4 @@
+*.zip
+*.md.bak*
+__pycache__/
+*.log
