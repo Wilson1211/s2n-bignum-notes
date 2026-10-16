@@ -1,0 +1,165 @@
+% Current execution-time C workflow, checked against source on 2026-10-16.
+% Section fragment; uses the existing tikz and arrows.meta setup in main.tex.
+% This documents behavior and constraints, not a completed proof experiment.
+
+\section{在 proof 執行時收集獨立隨機 evaluation set C}
+\label{sec:independent-random-evaluation-workflow}
+
+本節說明另一種已實作的資料收集流程：\allowbreak
+在 proof 執行時，\allowbreak 從符合條件的 tactic applications 另外抽出 evaluation set $C$。
+這裡的「獨立」指抽樣途徑不依賴 generation sampler 的保留結果，\allowbreak
+不表示 $C$ 與生成資料必然沒有重疊。
+本節依目前程式與文件說明流程，\allowbreak 不代表已完成完整 proof 實驗或 description 品質評估。
+
+\subsection{先分流，再分別建立生成資料與 C}
+
+\textbf{$C$ 的分流發生在 generation sampling、dedup 與 similarity check 之前。}
+每次被 instrumentation 記錄的 tactic application，\allowbreak
+通過共同的大小與 assumption 數量限制後，\allowbreak
+同時可進入 generation 路徑與獨立的 random reservoir。
+因此，即使某筆 record 後來沒有被 generation sampler 保留，\allowbreak
+它仍有機會進入 $C$。
+若只從已保存的 generation records 離線再抽樣，\allowbreak
+就無法找回執行時已丟棄的 records，\allowbreak 因而不是這裡的流程。
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Latex,
+  flow/.style={->, thick},
+  box/.style={draw, rounded corners, align=center, text width=5.2cm,
+    minimum height=0.85cm, inner sep=5pt, font=\small},
+  wide/.style={box, text width=14.7cm}
+]
+  \node[wide] (stream) at (0,0) {Instrumented tactic applications during proof execution};
+  \node[wide] (eligible) at (0,-1.3) {Common eligibility checks\\Successful applications and caught OCaml Failure attempts};
+  \node[box] (generation) at (-4.25,-4.3) {Generation sampling\\Policy, grouping, and retention};
+  \node[box] (reservoir) at (4.25,-4.3) {Independent random reservoir\\Per proof and tactic; capacity 40, seed 42};
+  \node[box] (prepare) at (-4.25,-7.3) {Generation preparation\\Dedup and similarity check};
+  \node[box] (samplec) at (4.25,-7.3) {Save sample C and provenance\\No dedup or similarity filtering};
+  \node[box] (descriptions) at (-4.25,-10.3) {Final generation sampling\\Generate descriptions A and B};
+  \node[box] (freeze) at (4.25,-10.3) {Choose one fixed C version\\Overlap with generation is allowed};
+  \node[wide] (judge) at (0,-13.3) {Evaluate both descriptions on the same C};
+  \draw[flow] (stream) -- (eligible);
+  \draw[flow] (eligible) -- (generation);
+  \draw[flow] (eligible) -- (reservoir);
+  \draw[flow] (generation) -- (prepare);
+  \draw[flow] (reservoir) -- (samplec);
+  \draw[flow] (prepare) -- (descriptions);
+  \draw[flow] (samplec) -- (freeze);
+  \draw[flow] (descriptions) -- (judge);
+  \draw[flow] (freeze) -- (judge);
+\end{tikzpicture}
+\end{center}
+
+圖中左側代表 A、B 各自的生成流程；\allowbreak
+要比較第一次 sampling 時可使用不同 collector policy，\allowbreak
+比較第二次 sampling 時則固定共同候選池。
+右側的 $C$ 不從 A、B 的最終 generation lists 選取，\allowbreak
+兩份 descriptions 必須使用同一版本的 $C$ 評分。
+
+\paragraph{哪些 applications 會進入 C？}
+成功的 tactic applications 與被捕捉為 OCaml \texttt{Failure} 的失敗嘗試都可納入，\allowbreak
+包括成功 proof 中途試過但失敗的 tactic。
+Conversions 與其他種類的 exceptions 不當成這裡的 tactic failure。
+共同 eligibility 限制仍然存在，\allowbreak
+因此 $C$ 代表符合條件且有 instrumentation 的 applications，\allowbreak
+不能視為所有 proof states 或 HOL Light 所有操作的完整樣本。
+
+\paragraph{抽樣單位與預設設定。}
+每個 proof execution 的每個 tactic 各有一個 random reservoir，\allowbreak
+預設最多保留 40 筆，\allowbreak independent seed 為 42。
+Success 與 failure 共用這 40 筆容量，\allowbreak
+不按 outcome 或 goal count 設配額，\allowbreak 所以不保證兩種 outcome 都有樣本。
+每次出現算一個 occurrence：\allowbreak
+內容相同的兩次呼叫仍是兩次抽樣機會，\allowbreak 也可能同時被保留。
+相同 seed 與相同順序的 eligible stream 可重現選取結果；\allowbreak
+執行順序改變則結果可能改變。
+不同 proofs 使用相同 seed，\allowbreak 也不保證它們的抽樣在統計上彼此獨立。
+
+\paragraph{這不是 held-out evaluation。}
+本節允許 $G_A\cap C$ 或 $G_B\cap C$ 非空，\allowbreak
+其中 $G_A$、$G_B$ 是實際用於生成 descriptions 的 records。
+不要因為重疊而補抽或移除 $C$，\allowbreak 否則會改變原先的抽樣分布。
+有保存實際 generation requests 時，\allowbreak 可以量測並回報 overlap。
+前一節要求 generation 與 eval 無重疊，\allowbreak
+本節則評估固定 eligible stream 樣本上的表現；\allowbreak
+兩種設計的評分意義不同，\allowbreak 不能將本節結果稱為未見 records 的泛化表現。
+
+\subsection{日常執行：自動沿用，或收集新的 C}
+
+日常 sampling workflow 與新建立的 experiment config 預設使用 \texttt{auto}。
+檢查發生在啟動實驗時，\allowbreak
+依經過驗證的 build 所使用的 source 決定能否沿用 $C$；\allowbreak
+既有 pinned-source 設定仍決定實際執行哪個版本。
+這不是背景檔案監看器，\allowbreak 修改或新增 \texttt{.ml} 檔案本身不會立刻觸發收集。
+
+\begin{itemize}
+  \item \textbf{auto：}找到來源與獨立抽樣設定相符、且通過驗證的 sample 時沿用；\allowbreak
+        新 proof 或相關 inputs 改變、沒有相符 sample 時，\allowbreak 在 proof 執行中收集新的 $C$。
+        沿用 $C$ 時 generation 的 proof execution 仍會執行，\allowbreak
+        只是該 proof 的獨立 collector 關閉。
+  \item \textbf{on：}強制在這次新的 proof execution 收集，\allowbreak
+        適合需要目前 source revision 對應資料的情況。
+  \item \textbf{off：}這次執行不收集也不沿用 $C$。
+        Independent capacity 設為零時，\allowbreak 在所有模式下都停用此功能。
+\end{itemize}
+
+是否能沿用，\allowbreak 不只檢查最外層 proof \texttt{.ml}：\allowbreak
+還包含展開後的 source dependencies、HOL source、\allowbreak
+proof 以 literal 路徑引用的 object files，\allowbreak 以及獨立抽樣的規則、capacity 與 seed。
+程式不推測執行時才計算出的 object 路徑。
+只改 generation policy、分組、配額、filtering、最終選取或 description prompt，\allowbreak
+本身不要求重抽 $C$；\allowbreak unrelated proof 的新增 object 也不會使此 sample 失效。
+Independent seed 與 generation 的 \texttt{--seed} 分開設定。
+
+手動覆寫可使用 \dpath{--independent-eval-mode}、\allowbreak
+\dpath{--independent-eval-capacity} 與 \dpath{--independent-eval-seed}。
+較底層的 \dpath{scripts/run-with-sampling.sh} 仍是手動流程，\allowbreak
+不會自動搜尋或發布可沿用的 $C$；\allowbreak
+舊的 explicit capacity／seed configs 也保留原有手動行為。
+歷史 schema-v1 configs 除非明確啟用，\allowbreak 否則維持停用。
+新的 collector 與 runtime adapter 必須編入 executable；\allowbreak
+只更新腳本不會更新既有 \texttt{.native}。
+
+\subsection{保存版本、新增 proof，以及評分時的來源限制}
+
+Collector 將 records 與 metadata 分別寫到\allowbreak
+\dpath{PROOF.ml.independent-eval/TAC.json} 與\allowbreak
+\dpath{PROOF.ml.independent-eval.json}。
+Metadata 保存 seed、capacity、eligible／retained 數量與選中 occurrence 的位置，\allowbreak
+workflow 再附上 build 與 source provenance。
+這些 records 不會進入一般 generation preparation。
+
+自動流程在本機為每個 proof 保存一份可驗證的 sample，\allowbreak
+並在 collection receipt 的 \dpath{independent_eval.reference} 記錄引用。
+發布檔案位於 dataset root 的 \dpath{data/evaluation/} 與\allowbreak
+\dpath{data/metadata/}；\allowbreak 這個動作不會上傳 Hugging Face。
+改變來源後產生新 sample，\allowbreak 舊版本與原始 provenance 都保留。
+沿用舊 sample 也不會把它的 source commit 改寫成新 commit。
+
+\paragraph{新增 proof 不會自動合併成一份全域 C。}
+將新 proof 加入選取清單後，\allowbreak
+\texttt{auto} 可沿用未變更 proofs 的 samples，\allowbreak
+並收集新 proof 中既有與新出現 tactics 的樣本。
+各 proof references 仍然分開；\allowbreak
+需要共同評分集合時，\allowbreak 使用手動 publisher 明確合併指定 samples。
+可用 \dpath{--previous-manifest} 保留舊 samples 並加入新 proof，\allowbreak
+建立新的 $C$ 版本，\allowbreak 不覆寫舊版本也不再隨機抽一次。
+同一 proof、同一 source version 的重複匯入會被拒絕。
+A、B 必須一起改用相同的新版本。
+
+這是逐 proof、逐 tactic 抽樣後的累積，\allowbreak
+不是把所有 proofs 的 occurrences 合在一起均勻抽樣。
+例如，同一 tactic 在兩個 proofs 各有 20 與 200 個 eligible occurrences，\allowbreak
+capacity 40 時前者全留，\allowbreak 後者只留 40 筆，\allowbreak
+兩邊單筆 occurrence 的入選機率不同。
+報告分數時應一併列出 proof 清單、版本、各 tactic 的筆數與 outcome coverage。
+
+\paragraph{沿用判斷與 judge 的 commit 檢查不同。}
+來源內容相同時，\allowbreak 自動流程可能跨 Git commits 沿用 sample，\allowbreak
+但目前 judge 要求 $C$ 與兩份 description setups 共用同一個已知 source commit。
+因此跨 commit 沿用的 sample 仍可能被 judge 拒絕。
+需要對齊時，\allowbreak 使用 \texttt{on} 在所需 revision 收集，\allowbreak
+再手動發布這次輸出；\allowbreak 合併評分用 proofs 也應來自同一 revision。
+保留 raw samples、build receipts 與 manifests，\allowbreak
+不要為通過檢查而改寫舊資料的來源。

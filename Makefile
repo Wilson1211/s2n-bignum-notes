@@ -1,5 +1,5 @@
 LATEXMK ?= latexmk
-TEX = main.tex framework.tex sampling-training-evaluation-workflows.tex
+TEX = main.tex framework.tex sampling-training-evaluation-workflows.tex independent-random-evaluation-workflow.tex
 MAIN_TEX = main.tex
 PDF = build/main.pdf
 
