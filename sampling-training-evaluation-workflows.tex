@@ -1,0 +1,215 @@
+% Design note based on the discussion on 2026-10-15; not an experiment report.
+% Section fragment: include inside an existing document with
+% \input{sampling-training-evaluation-workflows}
+% Needs Chinese-capable fonts, tikz, and \usetikzlibrary{arrows.meta}.
+% The existing framework.tex already provides these prerequisites.
+
+\section{比較兩階段 sampling 時的 training 與 evaluation 切分}
+\label{sec:sampling-training-evaluation-workflows}
+
+本節記錄預定的實驗設計，\allowbreak 不代表已經實作或執行。
+這裡的 training records 是提供給 LLM 生成 description 的範例，\allowbreak
+不會訓練或更新模型權重。
+為避免混淆，\allowbreak 下文區分「training 候選池」與「最後送進 LLM 的 generation list」。
+
+\begin{itemize}
+  \item \textbf{第一次 sampling：}collector 在 proof 執行時選取並保留候選 records。
+  \item \textbf{中間處理：}依既定流程合併候選、exact dedup 與 similarity check。
+  \item \textbf{第二次 sampling：}從候選池依分組配額與遞補規則，\allowbreak
+        選出最後用來生成 description 的 records。
+\end{itemize}
+
+\subsection{情況一：比較第一次 sampling 方法}
+\label{subsec:holdout-first-sampling}
+
+A、B 從相同 proof 與 source commit 開始，\allowbreak
+使用不同的第一次 sampling 方法。
+兩邊使用相同候選容量，\allowbreak 並固定其餘 collector 設定、dedup 與 similarity check 規則。
+因此，中間處理後的候選 lists 可以不同，\allowbreak 這正是要保留的實驗差異。
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Latex,
+  flow/.style={->, thick},
+  box/.style={draw, rounded corners, align=center, text width=5.2cm,
+    minimum height=0.85cm, inner sep=5pt, font=\small},
+  wide/.style={box, text width=11.7cm}
+]
+  \node[wide] (proof) at (0,0) {Same proof, source revision, and collection budget};
+  \node[box] (firsta) at (-3.25,-1.4) {First sampling A};
+  \node[box] (firstb) at (3.25,-1.4) {First sampling B};
+  \node[box] (poola) at (-3.25,-2.8) {Same dedup and similarity rules\\Candidate list $P_A$};
+  \node[box] (poolb) at (3.25,-2.8) {Same dedup and similarity rules\\Candidate list $P_B$};
+  \node[wide] (split) at (0,-4.5) {Assign shared record identities jointly to training or eval\\Keep each arm's membership; freeze one common eval set $E$};
+  \node[box] (traina) at (-3.25,-6.2) {A training candidates: $P_A\setminus E$};
+  \node[box] (trainb) at (3.25,-6.2) {B training candidates: $P_B\setminus E$};
+  \node[box] (seconda) at (-3.25,-7.7) {Same second sampling rule and settings\\Generation list $G_A$};
+  \node[box] (secondb) at (3.25,-7.7) {Same second sampling rule and settings\\Generation list $G_B$};
+  \node[box] (desca) at (-3.25,-9.2) {Generate description A};
+  \node[box] (descb) at (3.25,-9.2) {Generate description B};
+  \node[wide] (judge) at (0,-10.8) {Evaluate both descriptions on the same frozen $E$};
+  \draw[flow] (proof) -- (firsta);
+  \draw[flow] (proof) -- (firstb);
+  \draw[flow] (firsta) -- (poola);
+  \draw[flow] (firstb) -- (poolb);
+  \draw[flow] (poola) -- (split);
+  \draw[flow] (poolb) -- (split);
+  \draw[flow] (split) -- (traina);
+  \draw[flow] (split) -- (trainb);
+  \draw[flow] (traina) -- (seconda);
+  \draw[flow] (trainb) -- (secondb);
+  \draw[flow] (seconda) -- (desca);
+  \draw[flow] (secondb) -- (descb);
+  \draw[flow] (desca) -- (judge);
+  \draw[flow] (descb) -- (judge);
+\end{tikzpicture}
+\end{center}
+
+\paragraph{一起決定歸屬，不是混合兩邊的生成資料。}
+一起查看 A、B 的候選，是為了辨認內容相同的 records，\allowbreak
+統一決定它們是否屬於 evaluation。
+若某筆 record 被選入共同 eval set，\allowbreak 必須從兩邊的 training 候選中排除。
+不能將 B 獨有的 record 加進 A，\allowbreak 或反過來補入。
+A training 與 B training 可以互相重疊，\allowbreak 但任一方都不能與 eval 重疊。
+
+例如，下列編號代表依內容辨認的 record identity，\allowbreak 而不是檔案內的行號：
+\begin{quote}
+$P_A=\{r_1,r_2,r_3,r_4\}$，$P_B=\{r_2,r_3,r_5,r_6\}$。\\
+若選定 $E=\{r_3,r_5\}$，則\\
+A training 為 $\{r_1,r_2,r_4\}$；\\
+B training 為 $\{r_2,r_6\}$。
+\end{quote}
+兩份 descriptions 都評 $E$，\allowbreak 即使其中的 $r_5$ 原本只存在於 B 候選池。
+共同 eval 不限於 A、B 的交集，\allowbreak 但每個內容 identity 只保留一份。
+
+\paragraph{控制最後送進 LLM 的筆數。}
+在相同 tactic 內，\allowbreak 對 success 與 failure 分開決定共同的生成筆數：
+\[
+  n_{t,o}=\min\bigl(K_{t,o},\ |T_{A,t,o}|,\ |T_{B,t,o}|\bigr),
+\]
+其中 $t$ 表示 tactic，\allowbreak $o$ 表示 success 或 failure，\allowbreak
+$T$ 是移除 eval 後的 training 候選，\allowbreak $K$ 是預定的生成上限。
+兩邊各自用相同的 deterministic 第二次 sampling 規則選出 $n_{t,o}$ 筆。
+這個設計對齊的是每個 tactic 的 success／failure 總筆數，\allowbreak
+不額外要求各 goal-count group 的實際筆數都相同。
+相同筆數也不代表相同 token 數或 LLM 費用。
+若某個 outcome 在任一邊沒有 training 候選，\allowbreak
+對齊後兩邊該 outcome 都使用零筆；\allowbreak 應明確記錄此限制。
+
+例如，若 success 上限為 40，\allowbreak
+兩邊可用候選分別為 35 與 28，\allowbreak 最後各選 28 筆。
+較多的一方不必刪除其餘已保存候選；\allowbreak 它們只是未用於這輪生成。
+這是\textbf{固定生成筆數的比較}，\allowbreak 不是讓每種方法用盡所有可用資料的比較。
+
+\paragraph{第一次先保留較大的候選池。}
+若擔心切出 eval 後 training 太少，\allowbreak
+可以在第一次 sampling 使用相同且較大的候選容量。
+例如，兩邊先各保留 120 筆候選，\allowbreak
+經過去重、similarity 與 eval 排除後，\allowbreak 再各選最多 40 筆 success。
+這只是示例，\allowbreak 不是已決定的參數，也不保證每個 tactic 都有足夠資料。
+先離線統計各階段保留量，\allowbreak 再決定容量與 eval 大小；\allowbreak
+不能複製 records 湊數或將 eval 放回 training。
+候選容量增加也會增加收集與儲存成本。
+
+\subsection{情況二：比較第二次 sampling 方法}
+\label{subsec:holdout-second-sampling}
+
+第一次 sampling、dedup 與 similarity check 全部相同，\allowbreak
+先取得一份共同候選池 $P$。
+\textbf{在第二次 sampling 之前只切分一次}，\allowbreak
+得到共同 training 候選池 $T$ 與固定 eval set $E$。
+A、B 的第二次 sampling 都從同一份 $T$ 開始選。
+
+\begin{center}
+\begin{tikzpicture}[
+  >=Latex,
+  flow/.style={->, thick},
+  box/.style={draw, rounded corners, align=center, text width=5.2cm,
+    minimum height=0.85cm, inner sep=5pt, font=\small},
+  wide/.style={box, text width=11.7cm}
+]
+  \node[wide] (pool) at (0,0) {Same first sampling, dedup, and similarity check\\One common candidate pool $P$};
+  \node[wide] (split) at (0,-1.6) {Split once, before either second sampling method};
+  \node[box] (training) at (-3.25,-3.1) {Common training candidates $T$};
+  \node[box] (eval) at (3.25,-3.1) {Frozen eval set $E$\\Never passed to generation};
+  \node[box] (seconda) at (-3.25,-5.0) {Second sampling A on $T$\\Generation list $G_A$};
+  \node[box] (secondb) at (3.25,-5.0) {Second sampling B on $T$\\Generation list $G_B$};
+  \node[box] (desca) at (-3.25,-6.6) {Generate description A};
+  \node[box] (descb) at (3.25,-6.6) {Generate description B};
+  \node[wide] (judge) at (0,-8.3) {Evaluate both descriptions on the same frozen $E$};
+  \draw[flow] (pool) -- (split);
+  \draw[flow] (split) -- (training);
+  \draw[flow] (split) -- (eval);
+  \draw[flow] (training) -- (seconda);
+  \draw[flow] (training.south) -- (-3.25,-4.05) -- (3.25,-4.05) -- (secondb.north);
+  \draw[flow] (seconda) -- (desca);
+  \draw[flow] (secondb) -- (descb);
+  \draw[flow] (desca) -- (judge);
+  \draw[flow] (descb) -- (judge);
+  \draw[flow] (eval.east) -- (6.35,-3.1) -- (6.35,-8.3) -- (judge.east);
+\end{tikzpicture}
+\end{center}
+
+例如，共同候選池有 100 筆 success，\allowbreak
+先保留 20 筆作為 eval，\allowbreak 剩下 80 筆作為 training 候選。
+A、B 各自從同一份 80 筆候選選 40 筆，\allowbreak
+生成兩份 descriptions，\allowbreak 然後都評同一份預留的 20 筆。
+這些數字只是示意，\allowbreak failure 也需要另外規劃保留量。
+
+不建議先執行第二次 sampling，\allowbreak
+再從 A、B 的最終 lists 抽走 eval，\allowbreak 然後又 sampling 一次。
+這會移除方法刻意保留的代表，\allowbreak
+測到的變成兩輪選取與移除的整體效果。
+若要單獨比較第二次選取方法，\allowbreak
+應固定共同 training 候選、生成上限與非比較中的設定。
+若某個方法因組別限制無法填滿共同目標，\allowbreak
+須事先決定如何處理並記錄實際筆數，\allowbreak 不能默認兩邊一定選滿。
+
+\subsection{兩種設計都必須遵守的規則}
+
+令 $G_A$、$G_B$ 為實際送進 LLM 的 generation lists，\allowbreak
+共同的無重疊要求為
+\[
+  G_A\cap E=\emptyset,\qquad G_B\cap E=\emptyset.
+\]
+不要求 $G_A\cap G_B=\emptyset$：\allowbreak
+兩種方法可以選中相同的 training records。
+
+\begin{enumerate}
+  \item \textbf{按內容決定歸屬。}
+        不能只比較檔名、proof 名稱或 record 編號。
+        應依一致的內容 identity 規則辨認 records，\allowbreak
+        並檢查生成與評分實際看到的 evidence 是否重複；\allowbreak
+        僅來源 metadata 不同不能當成新的獨立案例。
+  \item \textbf{先切分、固定，再生成與評分。}
+        切分採 deterministic 規則，\allowbreak 保存 membership 與設定，\allowbreak
+        不依生成結果或 judge 分數重新挑選 eval。
+        切分比例、穩定排序規則、各 tactic／outcome 最低筆數仍待決定。
+  \item \textbf{不足資料時明確記錄。}
+        分別記錄各 tactic 的 success／failure 與 goal-count 分布。
+        若沒有可評 records，\allowbreak 該項標記 N/A；\allowbreak
+        若生成資料不足，\allowbreak 依事先約定的規則縮小規模或不納入，\allowbreak
+        不把缺失資料當成零分。
+  \item \textbf{固定生成與 judge 條件。}
+        除了要比較的 sampling 方法，\allowbreak
+        固定 prompt、模型、effort、token budget 與評分規則。
+        兩份 descriptions 評同一份 eval evidence，\allowbreak
+        分別呈現每個 tactic 的 success／failure 分數與筆數。
+        Deterministic 選取不代表 LLM 回答必然相同。
+  \item \textbf{保存每階段數量與來源。}
+        保存 source commit、collector／selector 版本、候選設定、\allowbreak
+        去重與 similarity 設定、split membership、\allowbreak
+        最終 generation lists 與固定 eval set。
+        報告原本可用量及最後實際使用量，\allowbreak
+        避免將筆數差異誤解為內容選取的改善。
+\end{enumerate}
+
+\paragraph{解讀限制。}
+這是同一批 proof records 內的 held-out evaluation，\allowbreak
+不是對另一個未見 proof 的泛化測試。
+完全不同的 records 也可能非常相似；\allowbreak
+若需要更嚴格的分離，\allowbreak 可將相似 records 以固定共同規則分成群，\allowbreak
+整群分到同一邊，\allowbreak 但此項尚未決定。
+此外，切分發生在 similarity check 之後，\allowbreak
+共同 eval 的分布仍受上游收集與篩選影響，\allowbreak
+不能將結果直接推廣到所有 proof 執行案例。
