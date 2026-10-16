@@ -7,4 +7,5 @@ __pycache__/
 **.fls
 **.fdb_latexmk
 **.aux
+**.gz
 
