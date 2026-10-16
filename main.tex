@@ -1,0 +1,25 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1.7cm]{geometry}
+\usepackage{fontspec}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+\setmainfont{Noto Serif CJK TC}
+\setsansfont{Noto Sans CJK TC}
+\setmonofont{DejaVu Sans Mono}
+\setlength{\parindent}{0pt}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+
+\newcommand{\dpath}[1]{{\footnotesize\texttt{\detokenize{#1}}}}
+% This TeX installation has no CJK line-breaking package. Mark natural
+% break points in the long table descriptions with this command.
+\newcommand{\cjkbreak}{\allowbreak}
+
+\begin{document}
+\input{framework}
+\input{sampling-training-evaluation-workflows}
+\end{document}

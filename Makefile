@@ -1,13 +1,14 @@
 LATEXMK ?= latexmk
-TEX = framework.tex
-PDF = build/framework.pdf
+TEX = main.tex framework.tex sampling-training-evaluation-workflows.tex
+MAIN_TEX = main.tex
+PDF = build/main.pdf
 
 .PHONY: all clean
 all: $(PDF)
 
 $(PDF): $(TEX)
 	mkdir -p build
-	$(LATEXMK) -lualatex -interaction=nonstopmode -halt-on-error -file-line-error -outdir=build $(TEX)
+	$(LATEXMK) -lualatex -interaction=nonstopmode -halt-on-error -file-line-error -outdir=build $(MAIN_TEX)
 
 clean:
 	$(LATEXMK) -C -outdir=build $(TEX)

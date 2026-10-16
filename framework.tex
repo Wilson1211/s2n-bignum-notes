@@ -1,27 +1,5 @@
-\documentclass[11pt,a4paper]{article}
-
-\usepackage[margin=1.7cm]{geometry}
-\usepackage{fontspec}
-\usepackage{longtable}
-\usepackage{array}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta}
-
-\setmainfont{Noto Serif CJK TC}
-\setsansfont{Noto Sans CJK TC}
-\setmonofont{DejaVu Sans Mono}
-\setlength{\parindent}{0pt}
-\setlength{\LTleft}{0pt}
-\setlength{\LTright}{0pt}
-
-\newcommand{\dpath}[1]{{\footnotesize\texttt{\detokenize{#1}}}}
-% This TeX installation has no CJK line-breaking package. Mark natural
-% break points in the long table descriptions with this command.
-\newcommand{\cjkbreak}{\allowbreak}
-
-\begin{document}
-
-\section*{資料流程框架}
+\section{Framework}
+\subsection*{資料流程框架}
 
 \begin{center}
 \begin{tikzpicture}[
@@ -77,8 +55,8 @@
 \small
 \textbf{跨階段追溯：}\dpath{data/metadata/} 記錄上述各階段的來源、設定與檔案關係。
 
-\clearpage
-\section*{各階段資料夾說明}
+
+\subsection*{各階段資料夾說明}
 
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.35}
@@ -106,4 +84,4 @@
 全流程 & \dpath{data/metadata/} & s2n-bignum commit、實驗設定、來源檔案、雜湊、搬移對照等追溯資訊。\cjkbreak 各資料清單的 index 也可以與 records 放在同一階段資料夾。 \\ \hline
 \end{longtable}
 
-\end{document}
+
